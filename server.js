@@ -63,7 +63,7 @@ app.use(morgan('combined'));
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rci_database';
+    const mongoURI = process.env.MONGODB_URI;
     console.log('🔗 Attempting to connect to MongoDB...');
     
     await mongoose.connect(mongoURI, {

@@ -185,8 +185,7 @@ export default {
               filter: { email }
             });
 
-            const user = userResp.document;
-            if (!user) {
+            if (!userResp || !userResp.document) {
               return new Response(JSON.stringify({
                 success: false,
                 error: 'User not found'
@@ -195,6 +194,8 @@ export default {
                 headers: { 'Content-Type': 'application/json', ...corsHeaders }
               });
             }
+
+            const user = userResp.document;
 
             // Verify the password
             const hashedPassword = await hashPassword(password);
@@ -229,7 +230,7 @@ export default {
             return new Response(JSON.stringify({
               success: false,
               error: 'Internal server error',
-              details: error.message
+              details: process.env.NODE_ENV === 'development' ? error.message : undefined
             }), {
               status: 500,
               headers: { 'Content-Type': 'application/json', ...corsHeaders }
