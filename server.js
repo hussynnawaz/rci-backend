@@ -38,6 +38,7 @@ app.use(limiter);
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'https://replicacopyindustries.com',
+    'https://rci-frontend-main.vercel.app', // Canonical frontend URL
     'https://rci-frontend-main-dmqmfcupy-developer-sohails-projects.vercel.app', // Production frontend
     'http://localhost:5173', // For development (Vite)
     'http://localhost:3000',  // For development (React)
