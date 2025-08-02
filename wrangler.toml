@@ -1,0 +1,24 @@
+name = "rci-backend"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+name = "rci-backend"
+
+[env.staging]
+name = "rci-backend-staging"
+
+# Environment variables will be set as secrets using wrangler secret put
+# Examples:
+# wrangler secret put DATABASE_URL
+# wrangler secret put JWT_SECRET
+# wrangler secret put FTP_HOST
+# wrangler secret put FTP_USER
+# wrangler secret put FTP_PASSWORD
+# wrangler secret put FRONTEND_URL
+
+# For file uploads, you might want to use R2 storage in the future
+# [[r2_buckets]]
+# binding = "UPLOADS"
+# bucket_name = "rci-uploads"

@@ -107,11 +107,37 @@ app.get('/', (req, res) => {
     message: 'Welcome to Replica Copy Industries Backend API',
     version: '1.0.0',
     endpoints: {
-      auth: '/api/auth',
-      forms: '/api/forms',
-      admin: '/api/admin',
-      upload: '/api/upload',
-      health: '/health'
+      auth: {
+        base: '/api/auth',
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login',
+        logout: 'POST /api/auth/logout',
+        profile: 'GET /api/auth/me',
+        updateProfile: 'PUT /api/auth/profile',
+        updatePassword: 'PUT /api/auth/updatepassword',
+        deleteAccount: 'DELETE /api/auth/account',
+        checkEmail: 'POST /api/auth/check-email'
+      },
+      forms: {
+        base: '/api/forms',
+        submit: 'POST /api/forms',
+        getAll: 'GET /api/forms',
+        getById: 'GET /api/forms/:id'
+      },
+      admin: {
+        base: '/api/admin',
+        forms: 'GET /api/admin/forms',
+        formById: 'GET /api/admin/forms/:id',
+        downloadFiles: 'GET /api/admin/files/download',
+        dashboardStats: 'GET /api/admin/dashboard/stats',
+        users: 'GET /api/admin/users'
+      },
+      upload: {
+        base: '/api/upload',
+        uploadFiles: 'POST /api/upload',
+        testFtp: 'GET /api/upload/test-ftp'
+      },
+      health: 'GET /health'
     }
   });
 });
