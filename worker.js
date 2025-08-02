@@ -15,20 +15,61 @@ export default {
       const path = url.pathname;
       const method = request.method;
 
+      // Global CORS preflight handler
+      if (method === 'OPTIONS') {
+        const allowedOrigins = [
+          env.FRONTEND_URL || 'https://replicacopyindustries.com',
+          'https://rci-frontend-main.vercel.app',
+          'http://localhost:5173',
+          'http://localhost:3000',
+          'http://localhost:3001'
+        ];
+        
+        const origin = request.headers.get('Origin');
+        const isAllowedOrigin = allowedOrigins.includes(origin) || 
+                               (origin && origin.includes('rci-frontend-main') && origin.includes('vercel.app'));
+        
+        return new Response(null, {
+          status: 200,
+          headers: {
+            'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'https://rci-frontend-main.vercel.app',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '86400'
+          }
+        });
+      }
+
       // Health check endpoint
       if (path === '/health' && method === 'GET') {
+        const corsHeaders = {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        };
+        
         return new Response(JSON.stringify({
           status: 'OK',
           message: 'RCI Backend Server is running on Cloudflare Workers',
           timestamp: new Date().toISOString(),
           version: '1.0.0'
         }), {
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
         });
       }
 
       // Root endpoint
       if (path === '/' && method === 'GET') {
+        const corsHeaders = {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        };
+        
         return new Response(JSON.stringify({
           message: 'Welcome to Replica Copy Industries Backend API',
           version: '1.0.0',
@@ -67,18 +108,25 @@ export default {
             health: 'GET /health'
           }
         }), {
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
         });
       }
 
-      // Handle API routes - placeholder for now
+      // Handle API routes
       if (path.startsWith('/api/')) {
         // Extract body for POST/PUT requests
         let body = null;
         if (['POST', 'PUT', 'PATCH'].includes(method)) {
           const contentType = request.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
-            body = await request.json();
+            try {
+              body = await request.json();
+            } catch (e) {
+              body = null;
+            }
           } else if (contentType.includes('application/x-www-form-urlencoded')) {
             const formData = await request.formData();
             body = Object.fromEntries(formData);
@@ -87,12 +135,25 @@ export default {
           }
         }
 
-        // Basic CORS headers
+        // Enhanced CORS headers
+        const allowedOrigins = [
+          env.FRONTEND_URL || 'https://replicacopyindustries.com',
+          'https://rci-frontend-main.vercel.app',
+          'http://localhost:5173',
+          'http://localhost:3000',
+          'http://localhost:3001'
+        ];
+        
+        const origin = request.headers.get('Origin');
+        const isAllowedOrigin = allowedOrigins.includes(origin) || 
+                               (origin && origin.includes('rci-frontend-main') && origin.includes('vercel.app'));
+        
         const corsHeaders = {
-          'Access-Control-Allow-Origin': env.FRONTEND_URL || 'https://replicacopyindustries.com',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Allow-Credentials': 'true'
+          'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'https://rci-frontend-main.vercel.app',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Max-Age': '86400'
         };
 
         // Handle CORS preflight
@@ -103,14 +164,169 @@ export default {
           });
         }
 
-        // For now, return a message that the API is being migrated
+        // Handle specific API endpoints
+        if (path === '/api/auth/login' && method === 'POST') {
+          try {
+            // Validate request body
+            if (!body || !body.email || !body.password) {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: 'Email and password are required'
+              }), {
+                status: 400,
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...corsHeaders
+                }
+              });
+            }
+
+            // Basic email validation
+            const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+            if (!emailRegex.test(body.email)) {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: 'Please provide a valid email'
+              }), {
+                status: 400,
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...corsHeaders
+                }
+              });
+            }
+
+            // TODO: Add database connectivity to validate user credentials
+            // For now, return a message indicating what needs to be implemented
+            return new Response(JSON.stringify({ 
+              success: false,
+              message: 'Login endpoint structure is ready',
+              next_steps: [
+                '1. Add MongoDB Atlas connection or D1 database',
+                '2. Implement password hashing/comparison (bcrypt)',
+                '3. Add JWT token generation',
+                '4. Add user validation logic'
+              ],
+              received_data: {
+                email: body.email,
+                password_provided: !!body.password
+              }
+            }), {
+              status: 501, // Not Implemented
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          } catch (error) {
+            return new Response(JSON.stringify({ 
+              success: false,
+              error: 'Invalid request data',
+              details: error.message
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+        }
+
+        if (path === '/api/auth/register' && method === 'POST') {
+          try {
+            // Validate request body
+            if (!body || !body.email || !body.password || !body.firstName || !body.lastName) {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: 'Email, password, firstName, and lastName are required'
+              }), {
+                status: 400,
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...corsHeaders
+                }
+              });
+            }
+
+            // Basic email validation
+            const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+            if (!emailRegex.test(body.email)) {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: 'Please provide a valid email'
+              }), {
+                status: 400,
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...corsHeaders
+                }
+              });
+            }
+
+            // Password length validation
+            if (body.password.length < 6) {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: 'Password must be at least 6 characters'
+              }), {
+                status: 400,
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...corsHeaders
+                }
+              });
+            }
+
+            // TODO: Add database connectivity to create user
+            return new Response(JSON.stringify({ 
+              success: false,
+              message: 'Registration endpoint structure is ready',
+              next_steps: [
+                '1. Add MongoDB Atlas connection or D1 database',
+                '2. Implement password hashing (bcrypt)',
+                '3. Add user creation logic',
+                '4. Add JWT token generation'
+              ],
+              received_data: {
+                email: body.email,
+                firstName: body.firstName,
+                lastName: body.lastName,
+                phone: body.phone,
+                company: body.company,
+                password_provided: !!body.password
+              }
+            }), {
+              status: 501, // Not Implemented
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          } catch (error) {
+            return new Response(JSON.stringify({ 
+              success: false,
+              error: 'Invalid request data',
+              details: error.message
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+        }
+
+        // For other API endpoints, return a generic response
         return new Response(JSON.stringify({ 
+          success: false,
           message: 'API endpoints are being migrated to Cloudflare Workers',
           path: path,
           method: method,
-          note: 'This is a work in progress. Full API functionality will be available soon.'
+          note: 'This endpoint is not yet implemented. Please add the logic to worker.js'
         }), {
-          status: 200,
+          status: 501,
           headers: { 
             'Content-Type': 'application/json',
             ...corsHeaders
